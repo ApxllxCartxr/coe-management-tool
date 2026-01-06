@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  COE_HEAD
+  STUDENT
+}
+
+enum SessionType {
+  QR
+  TOTP
+  MANUAL
+}
+
+enum ActivityType {
+  HACKATHON
+  RESEARCH
+  PROJECT
+  OTHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(STUDENT)
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Relations
+  createdCoes       Coe[]          @relation("CreatedCoes")
+  coeHeadOf         CoeHead[]      @relation("UserAsHead")
+  appointedHeads    CoeHead[]      @relation("HeadAppointer")
+  studentIn         CoeStudent?
+  invitedStudents   CoeStudent[]   @relation("StudentInviter")
+  announcements     Announcement[]
+  attendanceSessions AttendanceSession[]
+  attendanceRecords AttendanceRecord[]
+  activities        Activity[]
+  sentInvitations   Invitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Coe {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  code        String   @unique // e.g., "AI-LAB"
+  active      Boolean  @default(true)
+  
+  createdBy   String
+  creator     User     @relation("CreatedCoes", fields: [createdBy], references: [id])
+  
+  heads       CoeHead[]
+  students    CoeStudent[]
+  announcements Announcement[]
+  attendanceSessions AttendanceSession[]
+  activities  Activity[]
+  invitations Invitation[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("coes")
+}
+
+model CoeHead {
+  id          String   @id @default(cuid())
+  coeId       String
+  userId      String
+  appointedBy String
+  appointedAt DateTime @default(now())
+  
+  coe         Coe      @relation(fields: [coeId], references: [id], onDelete: Cascade)
+  user        User     @relation("UserAsHead", fields: [userId], references: [id])
+  appointer   User     @relation("HeadAppointer", fields: [appointedBy], references: [id])
+
+  @@unique([coeId, userId])
+  @@map("coe_heads")
+}
+
+model CoeStudent {
+  id          String   @id @default(cuid())
+  coeId       String
+  userId      String   @unique // Student can strictly be in only one COE
+  joinedAt    DateTime @default(now())
+  invitedBy   String?
+  
+  coe         Coe      @relation(fields: [coeId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  inviter     User?    @relation("StudentInviter", fields: [invitedBy], references: [id])
+
+  @@map("coe_students")
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  coeId       String
+  createdById String
+  title       String
+  content     String   @db.Text
+  isPinned    Boolean  @default(false)
+  
+  coe         Coe      @relation(fields: [coeId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+model AttendanceSession {
+  id             String      @id @default(cuid())
+  coeId          String
+  createdById    String
+  sessionDate    DateTime    @db.Date
+  sessionType    SessionType
+  qrSecret       String?     // Rotates for QR
+  totpSecret     String?     // Fixed for session
+  locationLat    Decimal?
+  locationLng    Decimal?
+  locationRadius Decimal?    // In meters
+  startsAt       DateTime
+  endsAt         DateTime
+  isActive       Boolean     @default(true)
+  
+  coe            Coe         @relation(fields: [coeId], references: [id])
+  creator        User        @relation(fields: [createdById], references: [id])
+  records        AttendanceRecord[]
+
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id             String      @id @default(cuid())
+  sessionId      String
+  userId         String
+  markedAt       DateTime    @default(now())
+  method         SessionType
+  locationLat    Decimal?
+  locationLng    Decimal?
+  verified       Boolean     @default(false)
+  
+  session        AttendanceSession @relation(fields: [sessionId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
+
+  @@unique([sessionId, userId])
+  @@map("attendance_records")
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  userId       String
+  coeId        String
+  activityDate DateTime     @db.Date
+  type         ActivityType
+  title        String
+  description  String?      @db.Text
+  hoursSpent   Decimal?
+  proofUrl     String?
+  
+  user         User         @relation(fields: [userId], references: [id])
+  coe          Coe          @relation(fields: [coeId], references: [id])
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("activities")
+}
+
+model Invitation {
+  id           String    @id @default(cuid())
+  coeId        String
+  invitedEmail String
+  invitedById  String
+  role         Role
+  token        String    @unique
+  expiresAt    DateTime
+  usedAt       DateTime?
+  
+  coe          Coe       @relation(fields: [coeId], references: [id], onDelete: Cascade)
+  inviter      User      @relation(fields: [invitedById], references: [id])
+
+  createdAt    DateTime  @default(now())
+
+  @@map("invitations")
+}
