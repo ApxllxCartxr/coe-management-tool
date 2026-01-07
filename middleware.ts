@@ -6,6 +6,7 @@ export default withAuth(
         const token = req.nextauth.token
         const pathname = req.nextUrl.pathname
 
+        // Role-based redirects for authenticated users accessing protected routes
         if (!token) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
 
         // Protect Admin Routes
@@ -14,18 +15,33 @@ export default withAuth(
         }
 
         // Protect COE Head Routes
-        // Allow Admins to access COE routes as well
         if (pathname.startsWith("/coe") && token.role !== "COE_HEAD" && token.role !== "SUPER_ADMIN" && token.role !== "ADMIN") {
             return NextResponse.redirect(new URL("/", req.url))
         }
     },
     {
         callbacks: {
-            authorized: ({ token }) => !!token,
+            authorized: ({ token, req }) => {
+                const pathname = req.nextUrl.pathname
+
+                // Define protected paths
+                const protectedPaths = ["/admin", "/coe", "/student", "/dashboard", "/settings"]
+                const isProtected = protectedPaths.some(p => pathname.startsWith(p))
+
+                // If path is protected, require token. Otherwise allow (e.g. /, /auth, /manifest.json)
+                if (isProtected) {
+                    return !!token
+                }
+
+                // Allow all other paths
+                return true
+            },
         },
     }
 )
 
 export const config = {
-    matcher: ["/admin/:path*", "/coe/:path*", "/student/:path*", "/dashboard/:path*", "/settings/:path*"],
+    // Match everything EXCEPT static files and APIs (APIs usually have their own auth, but we can include them if needed)
+    // We explicitly exclude manifest.json, sw.js, and other static assets
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.png$).*)"],
 }
