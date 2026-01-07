@@ -22,9 +22,9 @@ export default function ActivityForm() {
         try {
             const result = await logActivity(formData)
             if (result.success) {
-                sonnerToast.success("Activity logged!")
-                    // Optionally reset form
-                    (e.target as HTMLFormElement).reset()
+                sonnerToast.success("Activity logged!");
+                // Optionally reset form
+                (e.target as HTMLFormElement).reset()
             } else {
                 sonnerToast.error(result.message || "Failed to log activity")
             }
