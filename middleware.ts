@@ -7,15 +7,17 @@ export default withAuth(
         const pathname = req.nextUrl.pathname
 
         // Role-based redirects for authenticated users accessing protected routes
-        if (!token) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
+        // Role-based redirects for authenticated users accessing protected routes
+        // Note: 'authorized' callback handles the generic "is logged in" check.
+        // We only need to handle role-specific logic here.
 
         // Protect Admin Routes
-        if (pathname.startsWith("/admin") && token.role !== "SUPER_ADMIN" && token.role !== "ADMIN") {
+        if (pathname.startsWith("/admin") && token?.role !== "SUPER_ADMIN" && token?.role !== "ADMIN") {
             return NextResponse.redirect(new URL("/", req.url))
         }
 
         // Protect COE Head Routes
-        if (pathname.startsWith("/coe") && token.role !== "COE_HEAD" && token.role !== "SUPER_ADMIN" && token.role !== "ADMIN") {
+        if (pathname.startsWith("/coe") && token?.role !== "COE_HEAD" && token?.role !== "SUPER_ADMIN" && token?.role !== "ADMIN") {
             return NextResponse.redirect(new URL("/", req.url))
         }
     },
