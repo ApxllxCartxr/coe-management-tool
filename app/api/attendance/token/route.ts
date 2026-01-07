@@ -4,6 +4,7 @@ import { generateSessionToken } from "@/lib/attendance/token"
 import { NextResponse } from "next/server"
 
 // GET /api/attendance/token?sessionId=...
+export const dynamic = "force-dynamic"
 export async function GET(request: Request) {
     const session = await getAuthSession()
     if (!session) return new NextResponse("Unauthorized", { status: 401 })
