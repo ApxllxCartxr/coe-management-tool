@@ -1,11 +1,12 @@
 import { getAuthSession } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import { authenticator } from "otplib"
 
 // GET /api/attendance/totp?sessionId=...
 export const dynamic = "force-dynamic"
-export async function GET(request: Request) {
+export const revalidate = 0
+export async function GET(request: NextRequest) {
     const session = await getAuthSession()
     if (!session) return new NextResponse("Unauthorized", { status: 401 })
 
