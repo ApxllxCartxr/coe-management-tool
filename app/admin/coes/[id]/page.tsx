@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Calendar, UserCheck } from "lucide-react"
 import Link from "next/link"
 import AppointHeadDialog from "./AppointHeadDialog"
 import RemoveHeadButton from "./RemoveHeadButton"
+import CoeActions from "./CoeActions"
 
 async function getCoe(id: string) {
     return await prisma.coe.findUnique({
@@ -121,12 +122,7 @@ export default async function CoeDetailPage({ params }: { params: Promise<{ id: 
                             <CardTitle className="text-lg">Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Button variant="outline" className="w-full justify-start">
-                                View All Students
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start">
-                                Generate Report
-                            </Button>
+                            <CoeActions coeId={coe.id} coeName={coe.name} />
                         </CardContent>
                     </Card>
                 </div>

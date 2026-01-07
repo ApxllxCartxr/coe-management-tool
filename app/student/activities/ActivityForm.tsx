@@ -26,7 +26,7 @@ export default function ActivityForm() {
                     // Optionally reset form
                     (e.target as HTMLFormElement).reset()
             } else {
-                sonnerToast.error(result.message)
+                sonnerToast.error(result.message || "Failed to log activity")
             }
         } catch (e) {
             sonnerToast.error("Error logging activity")

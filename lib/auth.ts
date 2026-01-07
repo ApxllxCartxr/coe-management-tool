@@ -1,11 +1,13 @@
 import { NextAuthOptions, getServerSession } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
+
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 
 export const authOptions: NextAuthOptions = {
-    adapter: PrismaAdapter(prisma) as any,
+    adapter: PrismaAdapter(prisma),
     session: {
         strategy: "jwt",
     },
@@ -13,34 +15,35 @@ export const authOptions: NextAuthOptions = {
         signIn: "/auth/signin",
     },
     providers: [
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID || "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        }),
-        // Placeholder "Dev Login" Provider
         CredentialsProvider({
-            name: "Dev Login",
+            name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "text" },
-                role: { label: "Role", type: "text" },
+                email: { label: "Email", type: "email" },
+                password: { label: "Password", type: "password" }
             },
-            async authorize(credentials: any) {
-                if (!credentials?.email) return null
+            async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password) {
+                    throw new Error("Invalid credentials")
+                }
 
-                const { email, role } = credentials
-                const userRole = (role as any) || "STUDENT"
-
-                // Upsert user: create if new, update role if exists (for testing flexibility)
-                const user = await prisma.user.upsert({
-                    where: { email },
-                    update: { role: userRole },
-                    create: {
-                        email,
-                        name: email.split("@")[0], // Default name from email part
-                        role: userRole,
-                        image: `https://ui-avatars.com/api/?name=${email}&background=random`,
-                    },
+                const user = await prisma.user.findUnique({
+                    where: {
+                        email: credentials.email
+                    }
                 })
+
+                if (!user || !user.password) {
+                    throw new Error("User not found")
+                }
+
+                const isPasswordValid = await bcrypt.compare(
+                    credentials.password,
+                    user.password
+                )
+
+                if (!isPasswordValid) {
+                    throw new Error("Invalid password")
+                }
 
                 return {
                     id: user.id,
@@ -49,8 +52,8 @@ export const authOptions: NextAuthOptions = {
                     image: user.image,
                     role: user.role,
                 }
-            },
-        }),
+            }
+        })
     ],
     callbacks: {
         async session({ token, session }) {

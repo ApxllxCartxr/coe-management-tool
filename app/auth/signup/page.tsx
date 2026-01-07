@@ -1,55 +1,34 @@
 "use client"
 
-import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { resetDatabase } from "./actions"
 import { useState } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { registerUser } from "./actions"
+import { useRouter } from "next/navigation"
 
-export default function SignInPage() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
+export default function SignUpPage() {
     const [error, setError] = useState("")
+    const [isLoading, setIsLoading] = useState(false)
+    const router = useRouter()
 
-    const handleSignIn = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsLoading(true)
         setError("")
 
-        try {
-            const result = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
-                callbackUrl: "/"
-            })
+        const formData = new FormData(e.currentTarget)
+        const result = await registerUser(formData)
 
-            if (result?.error) {
-                setError("Invalid email or password")
-            } else if (result?.ok) {
-                window.location.href = "/"
-            }
-        } catch (error) {
-            setError("Something went wrong. Please try again.")
-        } finally {
+        if (result.error) {
+            setError(result.error)
             setIsLoading(false)
-        }
-    }
-
-    const handleResetDb = async () => {
-        if (confirm("⚠️ DANGER: Are you sure you want to wipe the ENTIRE database? This action cannot be undone.")) {
-            const result = await resetDatabase()
-            if (result.success) {
-                alert("Database has been reset successfully.")
-                window.location.reload()
-            } else {
-                alert("Failed to reset database.")
-            }
+        } else if (result.success) {
+            // Redirect to sign in page with success parameter if desired, or just push
+            router.push("/auth/signin")
         }
     }
 
@@ -86,24 +65,37 @@ export default function SignInPage() {
                                 width="24"
                                 xmlns="http://www.w3.org/2000/svg"
                             >
-                                <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="8.5" cy="7" r="4" />
+                                <line x1="20" x2="20" y1="8" y2="14" />
+                                <line x1="23" x2="17" y1="11" y2="11" />
                             </svg>
                         </div>
-                        <CardTitle className="text-2xl font-bold text-white">Sign in to your account</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-white">Create an account</CardTitle>
                         <CardDescription className="text-zinc-400">
-                            Enter your email and password to access the system
+                            Enter your details to create your account
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <form onSubmit={handleSignIn} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input
+                                    id="name"
+                                    name="name"
+                                    type="text"
+                                    placeholder="John Doe"
+                                    className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 focus-visible:ring-blue-500"
+                                    required
+                                />
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
                                     id="email"
+                                    name="email"
                                     type="email"
                                     placeholder="name@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
                                     className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 focus-visible:ring-blue-500"
                                     required
                                 />
@@ -112,12 +104,12 @@ export default function SignInPage() {
                                 <Label htmlFor="password">Password</Label>
                                 <Input
                                     id="password"
+                                    name="password"
                                     type="password"
                                     placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
                                     className="bg-white/5 border-white/10 text-white placeholder:text-zinc-500 focus-visible:ring-blue-500"
                                     required
+                                    minLength={6}
                                 />
                             </div>
 
@@ -132,38 +124,18 @@ export default function SignInPage() {
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium h-11"
                                 disabled={isLoading}
                             >
-                                {isLoading ? "Signing in..." : "Sign In"}
+                                {isLoading ? "Creating account..." : "Sign Up"}
                             </Button>
                         </form>
 
-                        <div className="relative pt-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-white/10" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-[#0a0a0a] px-2 text-zinc-500">
-                                    Developer Options
-                                </span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="destructive"
-                            className="w-full bg-red-900/20 hover:bg-red-900/40 text-red-500 border border-red-900/50"
-                            onClick={handleResetDb}
-                            type="button"
-                        >
-                            Reset Database
-                        </Button>
+                        <p className="text-center text-sm text-zinc-500 pt-2">
+                            Already have an account?{" "}
+                            <Link href="/auth/signin" className="text-blue-400 hover:text-blue-300 hover:underline">
+                                Sign in
+                            </Link>
+                        </p>
                     </CardContent>
                 </Card>
-
-                <p className="text-center text-sm text-zinc-500">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/auth/signup" className="text-blue-400 hover:text-blue-300 hover:underline">
-                        Sign up
-                    </Link>
-                </p>
             </div>
         </div>
     )

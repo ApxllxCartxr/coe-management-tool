@@ -44,7 +44,7 @@ export default async function AdminLayout({
                         <Users className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600" />
                         <span className="font-medium">Administrators</span>
                     </Link>
-                    <Link href="/admin/settings" className="flex items-center px-4 py-2.5 text-gray-700 rounded-lg hover:bg-gray-100 group transition-colors">
+                    <Link href="/settings" className="flex items-center px-4 py-2.5 text-gray-700 rounded-lg hover:bg-gray-100 group transition-colors">
                         <Settings className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600" />
                         <span className="font-medium">Settings</span>
                     </Link>

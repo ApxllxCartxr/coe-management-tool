@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Building2, UserCheck, Activity } from "lucide-react"
+import { AdminActions } from "./_components/admin-actions"
 
 async function getStats() {
     const [coeCount, studentCount, headCount, adminCount] = await Promise.all([
@@ -70,6 +71,8 @@ export default async function AdminDashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <AdminActions />
 
             {/* Recent Activity Section could go here */}
         </div>

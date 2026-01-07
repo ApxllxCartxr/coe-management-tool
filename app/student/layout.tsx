@@ -1,7 +1,7 @@
 import { getAuthSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, CalendarCheck, FileText, Megaphone, LogOut } from "lucide-react"
+import { LayoutDashboard, CalendarCheck, FileText, Megaphone, LogOut, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { prisma } from "@/lib/prisma"
 
@@ -58,6 +58,10 @@ export default async function StudentLayout({
                     <Link href="/student/announcements" className="flex items-center px-4 py-2.5 text-gray-700 rounded-lg hover:bg-gray-100 group">
                         <Megaphone className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600" />
                         <span className="font-medium">Announcements</span>
+                    </Link>
+                    <Link href="/settings" className="flex items-center px-4 py-2.5 text-gray-700 rounded-lg hover:bg-gray-100 group">
+                        <Settings className="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-600" />
+                        <span className="font-medium">Settings</span>
                     </Link>
                 </nav>
 
