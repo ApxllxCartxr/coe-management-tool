@@ -50,5 +50,17 @@ export async function middleware(req: NextRequest) {
 export const config = {
     // Matcher to filter what runs the middleware.
     // We explicitly exclude manifest.json, sw.js, and other static assets
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|.*\\.png$).*)"],
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - manifest.json (PWA manifest)
+         * - sw.js (service worker)
+         * - Images (png, jpg, jpeg, gif, svg, ico, webp)
+         */
+        "/((?!api|_next/static|_next/image|favicon\\.ico|manifest\\.json|sw\\.js|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$).*)",
+    ],
 }
